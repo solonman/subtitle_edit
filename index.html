@@ -139,6 +139,10 @@
             font-size: 16px;
             resize: vertical;
             transition: border-color 0.3s;
+            /* 让文字在框里上下居中 */
+            height: 2.2em;        /* 只留一行高，想多行可 3.2em、4.2em */
+            line-height: 2.2em;   /* 与高度相同 */
+            padding: 0 10px;      /* 去掉上下 padding，只留左右 */
         }
 
         .subtitle-text:focus {
