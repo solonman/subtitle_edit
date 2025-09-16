@@ -308,6 +308,8 @@
 
         // 解析字幕文件
         function parseSubtitles(content, format) {
+            // 统一把时间里的逗号换成点，再解析
+            content = content.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
             const lines = content.trim().split('\n');
             const subs = [];
             let i = 0;
