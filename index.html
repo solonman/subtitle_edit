@@ -130,16 +130,14 @@
         .subtitle-text {
             width: 100%;
             min-height: 50px;
-            padding: 10px;
+            /* 关键调整 */
+            padding: 10px 10px 6px 10px;   /* 上 10 右 10 下 6 左 10 */
+            height: auto;                  /* 让行数自己撑高 */
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
             resize: vertical;
             transition: border-color 0.3s;
-            /* 让文字在框里上下居中 */
-            height: 2.2em;        /* 只留一行高，想多行可 3.2em、4.2em */
-            line-height: 2.2em;   /* 与高度相同 */
-            padding: 0 10px;      /* 去掉上下 padding，只留左右 */
         }
 
         .subtitle-text:focus {
