@@ -1,1 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线字幕编辑器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .upload-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .file-input-label:hover {
+            background-color: #2980b9;
+        }
+
+        .editor-section {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .subtitle-item {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .subtitle-item:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .subtitle-item.editing {
+            border-color: #3498db;
+            background-color: #e3f2fd;
+        }
+
+        .time-display {
+            font-family: 'Courier New', monospace;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-input {
+            font-family: 'Courier New', monospace;
+            border: 1px solid #ddd;
+            padding: 5px 8px;
+            border-radius: 3px;
+            font-size: 14px;
+            width: 120px;
+        }
+
+        .subtitle-text {
+            width: 100%;
+            min-height: 50px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .subtitle-text:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .format-selector {
+            margin-bottom: 20px;
+        }
+
+        .format-selector label {
+            margin-right: 20px;
+            cursor: pointer;
+        }
+
+        .format-selector input[type="radio"] {
+            margin-right: 5px;
+        }
+
+        .stats {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #229954;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .editor-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎬 在线字幕编辑器</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="upload-section" id="uploadSection">
+            <h2>上传字幕文件</h2>
+            <p style="margin: 20px 0; color: #666;">支持 SRT、WEBVTT 和 TXT 格式</p>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="fileInput" accept=".srt,.vtt,.txt">
+                <label for="fileInput" class="file-input-label">
+                    选择字幕文件
+                </label>
+            </div>
+            
+            <div id="uploadError" class="error-message" style="display: none;"></div>
+            <div id="uploadSuccess" class="success-message" style="display: none;"></div>
+        </div>
+
+        <div class="editor-section" id="editorSection">
+            <div class="editor-header">
+                <h2>字幕编辑器</h2>
+                <button class="btn btn-success" onclick="downloadSubtitles()">💾 下载字幕</button>
+            </div>
+
+            <div class="format-selector">
+                <label>
+                    <input type="radio" name="format" value="srt" checked> SRT 格式
+                </label>
+                <label>
+                    <input type="radio" name="format" value="vtt"> WEBVTT 格式
+                </label>
+                <label>
+                    <input type="radio" name="format" value="txt"> 纯文本格式
+                </label>
+            </div>
+
+            <div class="stats" id="stats">
+                字幕总数: <span id="subtitleCount">0</span> | 
+                总时长: <span id="totalDuration">00:00:00</span> |
+                已修改: <span id="modifiedCount">0</span>
+            </div>
+
+            <div id="subtitleContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        let subtitles = [];
+        let modifiedCount = 0;
+
+        // 文件上传处理
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            let format = 'srt';
+            
+            if (fileName.endsWith('.vtt')) format = 'vtt';
+            else if (fileName.endsWith('.txt')) format = 'txt';
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    subtitles = parseSubtitles(content, format);
+                    displaySubtitles();
+                    document.getElementById('uploadSection').style.display = 'none';
+                    document.getElementById('editorSection').style.display = 'block';
+                    document.getElementById('uploadError').style.display = 'none';
+                    document.getElementById('uploadSuccess').style.display = 'block';
+                    document.getElementById('uploadSuccess').textContent = '文件上传成功！';
+                    
+                    // 设置格式选择器
+                    document.querySelector(`input[name="format"][value="${format}"]`).checked = true;
+                } catch (error) {
+                    document.getElementById('uploadError').style.display = 'block';
+                    document.getElementById('uploadError').textContent = '解析文件失败: ' + error.message;
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // 解析字幕文件
+        function parseSubtitles(content, format) {
+            const lines = content.trim().split('\n');
+            const subs = [];
+            let i = 0;
+
+            if (format === 'vtt') {
+                // 跳过WEBVTT头部
+                if (lines[0].includes('WEBVTT')) i = 1;
+                while (i < lines.length && lines[i].trim() === '') i++;
+            }
+
+            while (i < lines.length) {
+                let line = lines[i].trim();
+                
+                // 跳过空行
+                if (line === '') {
+                    i++;
+                    continue;
+                }
+
+                // SRT格式有序号行
+                if (format === 'srt' && /^\d+$/.test(line)) {
+                    i++;
+                    line = lines[i].trim();
+                }
+
+                // 解析时间轴
+                const timeMatch = line.match(/(\d{2}:\d{2}:\d{2}.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}.\d{3})/);
+                if (!timeMatch) {
+                    i++;
+                    continue;
+                }
+
+                const startTime = timeMatch[1];
+                const endTime = timeMatch[2];
+                i++;
+
+                // 收集字幕文本
+                let text = '';
+                while (i < lines.length && lines[i].trim() !== '') {
+                    text += lines[i] + '\n';
+                    i++;
+                }
+                text = text.trim();
+
+                if (text) {
+                    subs.push({
+                        id: subs.length + 1,
+                        startTime: startTime,
+                        endTime: endTime,
+                        text: text,
+                        originalText: text,
+                        originalStartTime: startTime,
+                        originalEndTime: endTime
+                    });
+                }
+
+                i++;
+            }
+
+            return subs;
+        }
+
+        // 显示字幕
+        function displaySubtitles() {
+            const container = document.getElementById('subtitleContainer');
+            container.innerHTML = '';
+
+            subtitles.forEach((sub, index) => {
+                const subDiv = document.createElement('div');
+                subDiv.className = 'subtitle-item';
+                subDiv.innerHTML = `
+                    <div class="time-display">
+                        <input type="text" class="time-input" value="${sub.startTime}" 
+                               onchange="updateTime(${index}, 'start', this.value)">
+                        <span>--></span>
+                        <input type="text" class="time-input" value="${sub.endTime}" 
+                               onchange="updateTime(${index}, 'end', this.value)">
+                    </div>
+                    <textarea class="subtitle-text" 
+                              onchange="updateText(${index}, this.value)"
+                              onkeydown="handleTextKeydown(event, ${index})"
+                              placeholder="在此输入字幕内容...">${sub.text}</textarea>
+                `;
+                container.appendChild(subDiv);
+            });
+
+            updateStats();
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('subtitleCount').textContent = subtitles.length;
+            
+            if (subtitles.length > 0) {
+                const totalMs = timeToMs(subtitles[subtitles.length - 1].endTime);
+                document.getElementById('totalDuration').textContent = msToTime(totalMs);
+            } else {
+                document.getElementById('totalDuration').textContent = '00:00:00';
+            }
+            
+            document.getElementById('modifiedCount').textContent = modifiedCount;
+        }
+
+        // 时间转换函数
+        function timeToMs(time) {
+            const [hours, minutes, seconds] = time.split(':');
+            const [secs, ms] = seconds.split('.');
+            return parseInt(hours) * 3600000 + parseInt(minutes) * 60000 + parseInt(secs) * 1000 + parseInt(ms);
+        }
+
+        function msToTime(ms) {
+            const hours = Math.floor(ms / 3600000);
+            const minutes = Math.floor((ms % 3600000) / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // 更新时间
+        function updateTime(index, type, value) {
+            if (!/^\d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
+                alert('时间格式错误！请使用 HH:MM:SS.MS 格式');
+                return;
+            }
+
+            if (type === 'start') {
+                subtitles[index].startTime = value;
+            } else {
+                subtitles[index].endTime = value;
+            }
+
+            if (subtitles[index].text !== subtitles[index].originalText ||
+                subtitles[index].startTime !== subtitles[index].originalStartTime ||
+                subtitles[index].endTime !== subtitles[index].originalEndTime) {
+                modifiedCount++;
+            }
+
+            updateStats();
+        }
+
+        // 更新文本
+        function updateText(index, value) {
+            subtitles[index].text = value;
+            
+            if (value !== subtitles[index].originalText) {
+                modifiedCount++;
+            }
+            
+            updateStats();
+        }
+
+        // 处理文本框按键事件（智能换行）
+        function handleTextKeydown(event, index) {
+            // 处理回车键
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                
+                const textarea = event.target;
+                const cursorPos = textarea.selectionStart;
+                const text = textarea.value;
+                const beforeCursor = text.substring(0, cursorPos);
+                const afterCursor = text.substring(cursorPos);
+                
+                // 计算换行位置比例
+                const ratio = beforeCursor.length / text.length;
+                
+                // 更新当前字幕
+                subtitles[index].text = beforeCursor.trim();
+                
+                // 创建新字幕
+                const newSub = {
+                    id: subtitles.length + 1,
+                    startTime: subtitles[index].startTime,
+                    endTime: subtitles[index].endTime,
+                    text: afterCursor.trim(),
+                    originalText: afterCursor.trim(),
+                    originalStartTime: subtitles[index].startTime,
+                    originalEndTime: subtitles[index].endTime
+                };
+                
+                // 插入新字幕
+                subtitles.splice(index + 1, 0, newSub);
+                
+                // 重新分配时间轴
+                const startMs = timeToMs(subtitles[index].startTime);
+                const endMs = timeToMs(subtitles[index].endTime);
+                const duration = endMs - startMs;
+                
+                const splitPoint = startMs + duration * ratio;
+                
+                subtitles[index].endTime = msToTime(splitPoint) + '.000';
+                subtitles[index + 1].startTime = msToTime(splitPoint) + '.000';
+                
+                displaySubtitles();
+                
+                // 聚焦到新创建的字幕
+                setTimeout(() => {
+                    const newTextarea = document.querySelectorAll('.subtitle-text')[index + 1];
+                    if (newTextarea) {
+                        newTextarea.focus();
+                        newTextarea.setSelectionRange(0, 0);
+                    }
+                }, 100);
+                
+                modifiedCount++;
+            }
+        }
+
+        // 下载字幕
+        function downloadSubtitles() {
+            const format = document.querySelector('input[name="format"]:checked').value;
+            let content = '';
+            
+            if (format === 'vtt') {
+                content = 'WEBVTT\n\n';
+            }
+            
+            subtitles.forEach((sub, index) => {
+                if (format === 'srt') {
+                    content += `${index + 1}\n`;
+                }
+                
+                content += `${sub.startTime} --> ${sub.endTime}\n`;
+                content += `${sub.text}\n\n`;
+            });
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            let extension = format;
+            if (format === 'txt') extension = 'txt';
+            else if (format === 'vtt') extension = 'vtt';
+            else extension = 'srt';
+            
+            a.download = `subtitles.${extension}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('字幕下载成功！');
+        }
+    </script>
+</body>
+</html>
