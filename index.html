@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>在线字幕编辑器 (Pro)</title>
+    <title>在线字幕编辑器 (Final)</title>
     <style>
         :root {
             --primary-color: #3498db;
@@ -12,26 +12,23 @@
             --success-hover: #229954;
             --secondary-color: #95a5a6;
             --secondary-hover: #7f8c8d;
-            --danger-color: #e74c3c;
             --light-gray: #f8f9fa;
             --border-color: #e9ecef;
-            --text-color: #333;
-            --subtle-text: #666;
-            --body-bg: #f5f5f5;
             --header-bg: #2c3e50;
+            --body-bg: #f5f5f5;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--body-bg);
-            color: var(--text-color);
+            color: #333;
             line-height: 1.6;
+        }
+        
+        body.editor-active {
+            padding-top: 130px; /* 为固定的工具栏留出空间 */
         }
 
         .container {
@@ -47,33 +44,16 @@
             margin-bottom: 30px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        h1 {
-            text-align: center;
-            font-size: 28px;
-        }
+        h1 { text-align: center; font-size: 28px; }
 
         .upload-section {
             background: white;
             padding: 40px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
             text-align: center;
         }
-
-        .file-input-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            overflow: hidden;
-        }
-
-        .file-input-wrapper input[type=file] {
-            position: absolute;
-            left: -9999px;
-        }
-
+        
         .file-input-label {
             display: inline-block;
             padding: 12px 30px;
@@ -81,55 +61,60 @@
             color: white;
             border-radius: 5px;
             font-size: 16px;
+            cursor: pointer;
             transition: background-color 0.3s;
         }
+        .file-input-label:hover { background-color: var(--primary-hover); }
+        input[type="file"] { display: none; }
 
-        .file-input-label:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .editor-section {
-            display: none;
-            background: white;
-            padding-top: 100px; /* 为sticky bar留出空间 */
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            position: relative;
-        }
-        
-        .sticky-controls {
-            position: sticky;
+        .fixed-controls-container {
+            display: none; /* 默认隐藏 */
+            position: fixed;
             top: 0;
-            z-index: 1000;
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 15px 30px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            /* 使其在editor-section内部，但视觉上在顶部 */
-            position: absolute;
             left: 0;
-            right: 0;
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 0;
         }
         
-        .controls-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
+        .controls-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        .subtitle-list-wrapper {
-            padding: 0 30px 30px 30px;
+        .top-bar, .stats-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
         }
         
+        .top-bar { padding-bottom: 10px; }
+        
+        .stats-bar {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: rgba(248, 249, 250, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .controls-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        
+        .delay-setting label, .format-selector label { font-size: 14px; color: #666; }
+        .delay-setting input { width: 60px; padding: 5px 8px; border-radius: 4px; border: 1px solid #ddd; margin-left: 5px; }
+        .format-selector input { margin-right: 4px; vertical-align: middle; }
+
+        .editor-content { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+
         .subtitle-item {
             background-color: var(--light-gray);
             border: 1px solid var(--border-color);
@@ -137,464 +122,62 @@
             padding: 15px;
             margin-bottom: 15px;
             transition: all 0.3s ease;
-            position: relative;
-            border-left: 5px solid var(--border-color);
+            border-left: 5px solid transparent;
         }
+        .subtitle-item.is-focused { border-left-color: var(--primary-color); background-color: #e9f5ff; }
 
-        .subtitle-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-left-color: var(--secondary-color);
-        }
-        
-        .subtitle-item.is-focused {
-            border-color: var(--primary-color);
-            background-color: #e3f2fd;
-            border-left-color: var(--primary-color);
-        }
-
-        .time-display {
-            font-family: 'Courier New', monospace;
-            color: var(--subtle-text);
-            font-size: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .time-input {
-            font-family: 'Courier New', monospace;
-            border: 1px solid #ddd;
-            padding: 5px 8px;
-            border-radius: 4px;
-            font-size: 14px;
-            width: 125px;
-            transition: border-color 0.3s;
-        }
-        
-        .time-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .subtitle-text {
-            width: 100%;
-            min-height: 50px;
-            padding: 10px;
-            height: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            resize: vertical;
-            transition: border-color 0.3s;
-        }
-
-        .subtitle-text:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-        
-        .delay-setting label, .format-selector label {
-            font-size: 14px;
-            color: var(--subtle-text);
-        }
-
-        .delay-setting input[type="number"] {
-            width: 70px;
-            padding: 5px 8px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin-left: 5px;
-        }
-        
-        .format-selector input[type="radio"] {
-            margin-right: 5px;
-            vertical-align: middle;
-        }
-
-        .stats {
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: var(--subtle-text);
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background: white;
-        }
+        .time-display { font-family: 'Courier New', monospace; color: #666; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .time-input { font-family: 'Courier New', monospace; border: 1px solid #ddd; padding: 5px 8px; border-radius: 4px; font-size: 14px; width: 125px; }
+        .subtitle-text { width: 100%; min-height: 50px; padding: 10px; height: auto; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; resize: vertical; }
+        .subtitle-text:focus, .time-input:focus { outline: none; border-color: var(--primary-color); }
 
         .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500;
+            transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
         }
-        
-        .btn:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        .btn-primary { background-color: var(--primary-color); color: white; }
-        .btn-primary:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn:disabled { background-color: #bdc3c7 !important; cursor: not-allowed; opacity: 0.7; }
         .btn-secondary { background-color: var(--secondary-color); color: white; }
         .btn-secondary:hover:not(:disabled) { background-color: var(--secondary-hover); }
         .btn-success { background-color: var(--success-color); color: white; }
         .btn-success:hover:not(:disabled) { background-color: var(--success-hover); }
 
-        .error-message { color: var(--danger-color); font-size: 14px; margin-top: 10px; }
-        .success-message { color: var(--success-color); font-size: 14px; margin-top: 10px; }
+        .error-message, .success-message { font-size: 14px; margin-top: 10px; }
+        .error-message { color: #e74c3c; }
+        .success-message { color: var(--success-color); }
 
         @media (max-width: 768px) {
-            .container { padding: 10px; }
-            .sticky-controls {
-                flex-direction: column;
-                align-items: stretch;
-                position: relative; /* On mobile, disable sticky to prevent screen space issues */
-                border-radius: 0;
-            }
-            .editor-section { padding-top: 0; }
-            .subtitle-list-wrapper { padding: 15px; }
-            .controls-group { justify-content: space-around; }
+            body.editor-active { padding-top: 200px; } /* Adjust for taller fixed header */
+            .top-bar, .stats-bar { flex-direction: column; align-items: stretch; text-align: center; }
+            .controls-group { justify-content: center; width: 100%;}
         }
     </style>
 </head>
 <body>
+
     <header>
         <div class="container">
-            <h1>🎬 在线字幕编辑器 Pro</h1>
+            <h1>🎬 在线字幕编辑器 Final</h1>
         </div>
     </header>
-
-    <div class="container">
-        <div class="upload-section" id="uploadSection">
-            <h2>上传字幕文件</h2>
-            <p style="margin: 20px 0; color: #666;">支持 SRT, WEBVTT 和 TXT 格式</p>
-            <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".srt,.vtt,.txt">
-                <label for="fileInput" class="file-input-label">选择文件</label>
-            </div>
-            <div id="uploadError" class="error-message" style="display: none;"></div>
-            <div id="uploadSuccess" class="success-message" style="display: none;"></div>
-        </div>
-
-        <div class="editor-section" id="editorSection">
-            <div class="sticky-controls">
+    
+    <div class="fixed-controls-container" id="fixedControls">
+        <div class="controls-wrapper">
+            <div class="top-bar">
                 <div class="controls-group">
-                    <button id="undoBtn" class="btn btn-secondary" onclick="undo()" disabled>↩️ 撤销</button>
-                    <button id="redoBtn" class="btn btn-secondary" onclick="redo()" disabled>↪️ 重做</button>
-                    <button class="btn btn-success" onclick="downloadSubtitles()">💾 下载字幕</button>
+                    <button id="undoBtn" class="btn btn-secondary" onclick="undo()" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                        撤销
+                    </button>
+                    <button id="redoBtn" class="btn btn-secondary" onclick="redo()" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 0 9 9 9 9 0 0 0 6-2.3L21 13"/></svg>
+                        重做
+                    </button>
+                    <button class="btn btn-success" onclick="downloadSubtitles()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        下载字幕
+                    </button>
                 </div>
                 <div class="controls-group">
                     <div class="format-selector">
                         <label><input type="radio" name="format" value="srt" checked> SRT</label>
-                        <label><input type="radio" name="format" value="vtt"> VTT</label>
-                    </div>
-                    <div class="delay-setting">
-                        <label for="lineBreakDelay">分行延迟:</label>
-                        <input type="number" id="lineBreakDelay" value="300" min="0" step="50"> ms
-                    </div>
-                </div>
-            </div>
-
-            <div class="subtitle-list-wrapper">
-                <div class="stats" id="stats">
-                    字幕总数: <span id="subtitleCount">0</span> | 
-                    总时长: <span id="totalDuration">00:00:00.000</span>
-                </div>
-                <div id="subtitleContainer"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let subtitles = [];
-        let history = [];
-        let historyIndex = -1;
-
-        // --- 历史记录管理 (Undo/Redo) ---
-        function saveState() {
-            history.splice(historyIndex + 1);
-            const state = JSON.parse(JSON.stringify(subtitles));
-            history.push(state);
-            historyIndex = history.length - 1;
-
-            if (history.length > 50) { // 限制历史记录大小
-                history.shift();
-                historyIndex--;
-            }
-            updateUndoRedoButtons();
-        }
-
-        function undo() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                subtitles = JSON.parse(JSON.stringify(history[historyIndex]));
-                displaySubtitles();
-                updateUndoRedoButtons();
-            }
-        }
-
-        function redo() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                subtitles = JSON.parse(JSON.stringify(history[historyIndex]));
-                displaySubtitles();
-                updateUndoRedoButtons();
-            }
-        }
-
-        function updateUndoRedoButtons() {
-            document.getElementById('undoBtn').disabled = historyIndex <= 0;
-            document.getElementById('redoBtn').disabled = historyIndex >= history.length - 1;
-        }
-
-        // --- 文件处理 ---
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const fileName = file.name.toLowerCase();
-            let format = 'srt'; // 默认
-            if (fileName.endsWith('.vtt')) format = 'vtt';
-            else if (fileName.endsWith('.txt')) format = 'txt'; // 新增TXT支持
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const content = e.target.result;
-                    subtitles = parseSubtitles(content, format);
-
-                    history = []; // 清空历史
-                    historyIndex = -1;
-                    saveState(); // 保存初始状态
-
-                    displaySubtitles();
-                    document.getElementById('uploadSection').style.display = 'none';
-                    document.getElementById('editorSection').style.display = 'block';
-                    document.getElementById('uploadError').style.display = 'none';
-                    document.getElementById('uploadSuccess').textContent = `成功加载 ${file.name}！`;
-                    document.getElementById('uploadSuccess').style.display = 'block';
-                    
-                    const formatRadio = document.querySelector(`input[name="format"][value="${format === 'txt' ? 'srt' : format}"]`);
-                    if(formatRadio) formatRadio.checked = true;
-
-                } catch (error) {
-                    document.getElementById('uploadError').textContent = '解析文件失败: ' + error.message;
-                    document.getElementById('uploadError').style.display = 'block';
-                }
-            };
-            reader.readAsText(file, 'UTF-8');
-        });
-
-        function parseSubtitles(content, format) {
-            content = content.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2');
-            const lines = content.trim().split(/\r?\n/);
-            const subs = [];
-            let i = 0;
-
-            if (format === 'vtt' && lines[0].includes('WEBVTT')) i = 1;
-
-            while (i < lines.length) {
-                let line = lines[i] ? lines[i].trim() : '';
-                if (line === '') { i++; continue; }
-
-                if ((format === 'srt' || format === 'txt') && /^\d+$/.test(line)) {
-                    if (lines[i + 1] && lines[i + 1].includes('-->')) {
-                        i++;
-                        line = lines[i].trim();
-                    }
-                }
-
-                const timeMatch = line.match(/(\d{2}:\d{2}:\d{2}\.\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}\.\d{3})/);
-                if (!timeMatch) { i++; continue; }
-
-                const startTime = timeMatch[1];
-                const endTime = timeMatch[2];
-                i++;
-
-                let text = '';
-                while (i < lines.length && lines[i] && lines[i].trim() !== '') {
-                    text += lines[i] + '\n';
-                    i++;
-                }
-                text = text.trim();
-
-                if (text) {
-                    subs.push({
-                        startTime: startTime,
-                        endTime: endTime,
-                        text: text,
-                    });
-                }
-                while (i < lines.length && (!lines[i] || lines[i].trim() === '')) { i++; }
-            }
-            return subs;
-        }
-
-        // --- 界面渲染与更新 ---
-        function displaySubtitles() {
-            const container = document.getElementById('subtitleContainer');
-            container.innerHTML = '';
-
-            subtitles.forEach((sub, index) => {
-                const subDiv = document.createElement('div');
-                subDiv.className = 'subtitle-item';
-                subDiv.innerHTML = `
-                    <div class="time-display">
-                        <input type="text" class="time-input" value="${sub.startTime}" onchange="updateTime(${index}, 'start', this.value)">
-                        <span>--></span>
-                        <input type="text" class="time-input" value="${sub.endTime}" onchange="updateTime(${index}, 'end', this.value)">
-                    </div>
-                    <textarea class="subtitle-text" onchange="updateText(${index}, this.value)" onkeydown="handleTextKeydown(event, ${index})" onfocus="highlightItem(this, true)" onblur="highlightItem(this, false)" placeholder="在此输入字幕内容...">${sub.text}</textarea>
-                `;
-                container.appendChild(subDiv);
-            });
-            updateStats();
-        }
-        
-        function highlightItem(element, isFocused) {
-            const item = element.closest('.subtitle-item');
-            if (item) {
-                item.classList.toggle('is-focused', isFocused);
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('subtitleCount').textContent = subtitles.length;
-            if (subtitles.length > 0) {
-                const lastSub = subtitles[subtitles.length - 1];
-                const totalMs = lastSub ? timeToMs(lastSub.endTime) : 0;
-                document.getElementById('totalDuration').textContent = msToTime(totalMs);
-            } else {
-                document.getElementById('totalDuration').textContent = '00:00:00.000';
-            }
-        }
-
-        // --- 时间转换工具 ---
-        function timeToMs(time) {
-            const parts = time.split(':');
-            const secondsParts = parts[2].split('.');
-            return parseInt(parts[0]) * 3600000 + parseInt(parts[1]) * 60000 + parseInt(secondsParts[0]) * 1000 + parseInt(secondsParts[1]);
-        }
-
-        function msToTime(ms) {
-            if (isNaN(ms) || ms < 0) ms = 0;
-            const hours = Math.floor(ms / 3600000);
-            const minutes = Math.floor((ms % 3600000) / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            const milliseconds = ms % 1000;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-        }
-
-        // --- 编辑操作 ---
-        function updateTime(index, type, value) {
-            if (!/^\d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
-                alert('时间格式错误！请使用 HH:MM:SS.ms 格式');
-                displaySubtitles(); return;
-            }
-            saveState();
-            if (type === 'start') subtitles[index].startTime = value;
-            else subtitles[index].endTime = value;
-            saveState();
-            updateStats();
-        }
-
-        function updateText(index, value) {
-            saveState();
-            subtitles[index].text = value;
-            saveState();
-            updateStats();
-        }
-
-        function handleTextKeydown(event, index) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                saveState();
-
-                const textarea = event.target;
-                const cursorPos = textarea.selectionStart;
-                const text = textarea.value;
-                if (text.length === 0) return;
-
-                const beforeCursor = text.substring(0, cursorPos).trim();
-                const afterCursor = text.substring(cursorPos).trim();
-                
-                if (!beforeCursor || !afterCursor) return;
-
-                const ratio = cursorPos / text.length;
-                subtitles[index].text = beforeCursor;
-
-                const newSub = { text: afterCursor };
-                
-                const startMs = timeToMs(subtitles[index].startTime);
-                const endMs = timeToMs(subtitles[index].endTime);
-                const duration = endMs - startMs;
-                const delayMs = parseInt(document.getElementById('lineBreakDelay').value) || 0;
-
-                if (duration > delayMs) {
-                    const availableDuration = duration - delayMs;
-                    const splitTimeMs = startMs + Math.round(availableDuration * ratio);
-                    subtitles[index].endTime = msToTime(splitTimeMs);
-                    newSub.startTime = msToTime(splitTimeMs + delayMs);
-                    newSub.endTime = msToTime(endMs);
-                } else {
-                    const splitTimeMs = startMs + Math.round(duration * ratio);
-                    subtitles[index].endTime = msToTime(splitTimeMs);
-                    newSub.startTime = msToTime(splitTimeMs);
-                    newSub.endTime = msToTime(endMs);
-                }
-                
-                subtitles.splice(index + 1, 0, newSub);
-                saveState();
-                
-                displaySubtitles();
-                
-                setTimeout(() => {
-                    const newTextarea = document.querySelectorAll('.subtitle-text')[index + 1];
-                    if (newTextarea) {
-                        newTextarea.focus();
-                        newTextarea.setSelectionRange(0, 0);
-                    }
-                }, 100);
-            }
-        }
-
-        // --- 字幕导出 ---
-        function downloadSubtitles() {
-            const format = document.querySelector('input[name="format"]:checked').value;
-            let content = '';
-            let extension = format;
-
-            if (format === 'vtt') content = 'WEBVTT\n\n';
-
-            subtitles.forEach((sub, index) => {
-                if (format === 'srt') content += `${index + 1}\n`;
-                const startTime = sub.startTime.replace('.', ',');
-                const endTime = sub.endTime.replace('.', ',');
-                content += `${startTime} --> ${endTime}\n`;
-                content += `${sub.text}\n\n`;
-            });
-        
-            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `subtitles_edited.${extension}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        
-            alert(`字幕已导出为 ${format.toUpperCase()} 格式！`);
-        }
-    </script>
-</body>
-</html>
+                        <label><input type="radio
